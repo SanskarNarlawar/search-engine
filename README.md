@@ -6,7 +6,7 @@ A web content processing pipeline that extracts, filters, and embeds web pages f
 
 - **English Language Filtering**: Automatically detects and processes only English content
 - **Local Embeddings**: Uses sentence-transformers for free, local embedding generation
-- **Smart Chunking**: Character-based chunking optimized for web content
+- **Smart Chunking**: Sentence-based chunking with optimized overlap control
 - **Vector Search**: PostgreSQL with pgvector for semantic similarity search
 - **Cost Effective**: No cloud API costs for embeddings
 
@@ -93,8 +93,8 @@ WET Files → Language Detection → English Pages → Chunking → Local Embedd
 ### Chunking Settings
 ```python
 CHUNK_TARGET_TOKENS = 250        # Target tokens per chunk
-CHUNK_OVERLAP_RATIO = 0.2        # 20% overlap between chunks
-USE_CHARACTER_CHUNKING = True     # Use character-based chunking for web content
+CHUNK_OVERLAP_RATIO = 0.2        # 20% overlap between chunks (max 50 tokens)
+USE_CHARACTER_CHUNKING = False   # Use sentence-based chunking (proven stable)
 ```
 
 ### Language Detection
@@ -137,7 +137,7 @@ FROM page_chunks;
 ### Expected Processing Times
 - **Language Detection**: ~10-50ms per page
 - **Local Embeddings**: ~50-200ms per chunk (MPS on Mac)
-- **Character Chunking**: ~1-5ms per page
+- **Sentence Chunking**: ~1-5ms per page
 
 ### Resource Usage
 - **Memory**: ~500MB for sentence-transformers model
@@ -192,7 +192,35 @@ python3 scripts/individualFileDownload.py
 python3 scripts/embedPages.py
 ```
 
+### Database GUI
+Recommended tools for database management:
+- **DBeaver** (Free): `brew install --cask dbeaver-community`
+- **TablePlus** (macOS): `brew install --cask tableplus`
 
+## Cost Analysis
 
+### Local vs Cloud Embeddings
+| Method | Cost | Speed | Quality | Privacy |
+|--------|------|-------|---------|---------|
+| **Local (CPU)** | Free | Medium | Good | ✅ |
+| **Local (GPU/MPS)** | Free | Fast | Good | ✅ |
+| **Google Cloud** | $9.60/8K pages | Fast | High | ❌ |
 
+### Storage Requirements
+- **Pages**: ~1-2MB per 1000 pages
+- **Chunks**: ~5-10MB per 1000 pages
+- **Embeddings**: ~1.5MB per 1000 chunks (384 dimensions)
+
+## Notes
+
+- The pipeline processes pages in batches of 5 by default
+- Sentence-based chunking with limited overlap (max 50 tokens) for optimal performance
+- Language detection uses the first 1000 characters of each page
+- All processing is local - no external API calls required
+- Proven to handle 10,000+ pages successfully
+- Data directory is git-ignored for security
+
+## License
+
+This project is for educational and research purposes.
 

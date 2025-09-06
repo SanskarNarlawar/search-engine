@@ -16,10 +16,10 @@ from sentence_transformers import SentenceTransformer
 
 CHUNK_TARGET_TOKENS = 250
 CHUNK_OVERLAP_RATIO = 0.2
-EMBED_MODEL = "all-MiniLM-L6-v2"  # Local sentence-transformers model
+EMBED_MODEL = "all-MiniLM-L6-v2"  # Lightweight model (384 dimensions)
 MAX_PAGE_CHARS = 50000
 EMBEDDING_DIM = 384  # Dimension for all-MiniLM-L6-v2
-USE_CHARACTER_CHUNKING = True  # Use character-based chunking for better web content handling
+USE_CHARACTER_CHUNKING = False  # Use sentence-based chunking (reverted)
 
 
 def setup_logging():
@@ -105,9 +105,11 @@ def character_chunk(text: str, chunk_size: int, overlap: int) -> List[str]:
 def init_local_model():
     logging.info("Initializing local sentence-transformers model...")
     try:
+        # Load model (will use MPS if available on Mac)
         model = SentenceTransformer(EMBED_MODEL)
         logging.info(f"Model '{EMBED_MODEL}' loaded successfully")
         logging.info(f"Embedding dimension: {model.get_sentence_embedding_dimension()}")
+        logging.info("Model loaded successfully")
         return model
     except Exception as e:
         logging.error(f"Failed to load model: {e}")
@@ -217,7 +219,7 @@ def main() -> None:
     model = init_local_model()
     nlp = ensure_spacy_sentencizer()
 
-    pages = load_pending_pages(limit=10000)
+    pages = load_pending_pages(limit=5)  # Back to original batch size
     if not pages:
         logging.info("No pending pages found")
         return
