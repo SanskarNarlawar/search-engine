@@ -11,3 +11,6 @@ ENV/
 data/
 *.log
 
+# Credentials (do not commit)
+credentials/*.json
+

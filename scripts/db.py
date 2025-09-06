@@ -43,6 +43,11 @@ def get_conn() -> psycopg.Connection:
 
 def init_db() -> None:
     with get_conn() as conn, conn.cursor() as cur:
+        # Enable pgvector (ignore if not permitted)
+        try:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        except Exception:
+            pass
         # wet_paths table: tracks each WET path and processing status
         cur.execute(
             """
@@ -69,7 +74,57 @@ def init_db() -> None:
             );
             """
         )
-        #I have to change url and content to not null
+        # Add embedding_status and embedding_error columns if missing
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pages' AND column_name = 'embedding_status'
+                ) THEN
+                    ALTER TABLE pages
+                    ADD COLUMN embedding_status TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (embedding_status IN ('pending','processing','done','error'));
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pages' AND column_name = 'embedding_error'
+                ) THEN
+                    ALTER TABLE pages ADD COLUMN embedding_error TEXT NULL;
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pages' AND column_name = 'language'
+                ) THEN
+                    ALTER TABLE pages ADD COLUMN language VARCHAR(10) DEFAULT 'unknown';
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pages' AND column_name = 'language_confidence'
+                ) THEN
+                    ALTER TABLE pages ADD COLUMN language_confidence FLOAT DEFAULT 0.0;
+                END IF;
+            END$$;
+            """
+        )
+
+        # page_chunks table with pgvector embedding
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS page_chunks (
+                id BIGSERIAL PRIMARY KEY,
+                page_id BIGINT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+                chunk_index INTEGER NOT NULL,
+                original_text TEXT NOT NULL,
+                enriched_text TEXT NOT NULL,
+                embedding vector(384) NOT NULL,
+                model TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE(page_id, chunk_index)
+            );
+            """
+        )
 
         conn.commit()
 
