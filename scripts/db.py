@@ -126,6 +126,30 @@ def init_db() -> None:
             """
         )
 
+        # Create HNSW index for vector similarity search
+        try:
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS page_chunks_embedding_hnsw_idx 
+                ON page_chunks USING hnsw (embedding vector_cosine_ops) 
+                WITH (m = 16, ef_construction = 64);
+                """
+            )
+            print("✅ HNSW index created/verified for vector similarity search")
+        except Exception as e:
+            print(f"⚠️  HNSW index creation failed (this is normal if no embeddings exist yet): {e}")
+            # Create a basic index as fallback
+            try:
+                cur.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS page_chunks_embedding_basic_idx 
+                    ON page_chunks USING btree (page_id, chunk_index);
+                    """
+                )
+                print("✅ Basic index created as fallback")
+            except Exception as fallback_error:
+                print(f"⚠️  Fallback index creation failed: {fallback_error}")
+
         conn.commit()
 
 

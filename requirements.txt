@@ -4,4 +4,5 @@ google-cloud-aiplatform>=1.66.0
 langdetect>=1.0.9
 sentence-transformers>=2.2.2
 torch>=1.9.0
+flask>=2.3.0
 

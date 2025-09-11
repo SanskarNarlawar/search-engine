@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}WET Pipeline Search - Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="search-card p-5 mb-5">
+            <div class="text-center mb-4">
+                <h1 class="display-4 fw-bold text-primary mb-3">
+                    <i class="fas fa-brain me-3"></i>Semantic Search
+                </h1>
+                <p class="lead text-muted">
+                    Search through web content using natural language queries powered by AI embeddings
+                </p>
+            </div>
+
+            <form method="POST" action="{{ url_for('search') }}" id="searchForm">
+                <div class="mb-4">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control search-input" 
+                               name="search_text" 
+                               placeholder="Enter your search query (e.g., 'machine learning algorithms', 'climate change research')..."
+                               required
+                               autocomplete="off">
+                        <button class="btn btn-search" type="submit">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="threshold" class="form-label">
+                            <i class="fas fa-sliders-h me-1"></i>Similarity Threshold
+                        </label>
+                        <input type="range" 
+                               class="form-range" 
+                               id="threshold" 
+                               name="threshold" 
+                               min="0.1" 
+                               max="1.0" 
+                               step="0.1" 
+                               value="0.5"
+                               oninput="updateThresholdValue(this.value)">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>More Similar</span>
+                            <span id="thresholdValue">0.5</span>
+                            <span>Less Similar</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="limit" class="form-label">
+                            <i class="fas fa-list me-1"></i>Max Results
+                        </label>
+                        <select class="form-select" id="limit" name="limit">
+                            <option value="10">10 results</option>
+                            <option value="20" selected>20 results</option>
+                            <option value="50">50 results</option>
+                            <option value="100">100 results</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="loading text-center mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Searching...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Searching through embeddings...</p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Database Statistics -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center mb-3">
+                    <i class="fas fa-database fa-2x mb-2"></i>
+                    <h4>{{ stats[0] | default(0) | int }}</h4>
+                    <small>Total Chunks</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center mb-3">
+                    <i class="fas fa-vector-square fa-2x mb-2"></i>
+                    <h4>{{ stats[1] | default(0) | int }}</h4>
+                    <small>With Embeddings</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center mb-3">
+                    <i class="fas fa-file-alt fa-2x mb-2"></i>
+                    <h4>{{ stats[2] | default(0) | int }}</h4>
+                    <small>Unique Pages</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center mb-3">
+                    <i class="fas fa-globe fa-2x mb-2"></i>
+                    <h4>{{ stats[3] | default(0) | int }}</h4>
+                    <small>Unique URLs</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Language Distribution -->
+        {% if language_stats %}
+        <div class="search-card p-4 mt-4">
+            <h5 class="mb-3">
+                <i class="fas fa-language me-2"></i>Content Languages
+            </h5>
+            <div class="d-flex flex-wrap">
+                {% for lang, count in language_stats %}
+                <span class="language-badge">
+                    {{ lang | upper }}: {{ count }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Example Queries -->
+        <div class="search-card p-4 mt-4">
+            <h5 class="mb-3">
+                <i class="fas fa-lightbulb me-2"></i>Example Queries
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Technical Topics:</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="example-query">machine learning algorithms</a></li>
+                        <li><a href="#" class="example-query">artificial intelligence research</a></li>
+                        <li><a href="#" class="example-query">data science techniques</a></li>
+                        <li><a href="#" class="example-query">web development frameworks</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>General Topics:</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="example-query">climate change solutions</a></li>
+                        <li><a href="#" class="example-query">health and wellness tips</a></li>
+                        <li><a href="#" class="example-query">business strategies</a></li>
+                        <li><a href="#" class="example-query">educational resources</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateThresholdValue(value) {
+        document.getElementById('thresholdValue').textContent = value;
+    }
+
+    // Example query click handlers
+    document.querySelectorAll('.example-query').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelector('input[name="search_text"]').value = this.textContent;
+            document.querySelector('input[name="search_text"]').focus();
+        });
+    });
+
+    // Form submission with loading state
+    document.getElementById('searchForm').addEventListener('submit', function() {
+        showLoading();
+    });
+
+    // Auto-focus search input
+    document.querySelector('input[name="search_text"]').focus();
+</script>
+{% endblock %}

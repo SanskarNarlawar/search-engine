@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Database Statistics - WET Pipeline{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5 fw-bold">
+                <i class="fas fa-chart-bar me-3"></i>Database Statistics
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-search me-1"></i>Back to Search
+            </a>
+        </div>
+
+        <!-- Main Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center">
+                    <i class="fas fa-database fa-3x mb-3"></i>
+                    <h2 class="display-6 fw-bold">{{ stats[0] | default(0) | int }}</h2>
+                    <p class="mb-0">Total Chunks</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center">
+                    <i class="fas fa-vector-square fa-3x mb-3"></i>
+                    <h2 class="display-6 fw-bold">{{ stats[1] | default(0) | int }}</h2>
+                    <p class="mb-0">With Embeddings</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center">
+                    <i class="fas fa-file-alt fa-3x mb-3"></i>
+                    <h2 class="display-6 fw-bold">{{ stats[2] | default(0) | int }}</h2>
+                    <p class="mb-0">Unique Pages</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card p-4 text-center">
+                    <i class="fas fa-globe fa-3x mb-3"></i>
+                    <h2 class="display-6 fw-bold">{{ stats[3] | default(0) | int }}</h2>
+                    <p class="mb-0">Unique URLs</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Language Distribution -->
+        {% if language_stats %}
+        <div class="search-card p-4 mb-4">
+            <h3 class="mb-4">
+                <i class="fas fa-language me-2"></i>Content Language Distribution
+            </h3>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="d-flex flex-wrap">
+                        {% for lang, count in language_stats %}
+                        <div class="language-badge me-2 mb-2">
+                            <strong>{{ lang | upper }}</strong>: {{ count }} chunks
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-end">
+                        <h5>Total Languages: {{ language_stats|length }}</h5>
+                        <p class="text-muted">Content detected in {{ language_stats|length }} different languages</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Processing Status -->
+        <div class="search-card p-4 mb-4">
+            <h3 class="mb-4">
+                <i class="fas fa-cogs me-2"></i>Processing Status
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if stats[1] and stats[1] > 0 %}
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Embeddings Status</h5>
+                            <p class="mb-0 text-muted">
+                                {% if stats[1] and stats[1] > 0 %}
+                                    {{ stats[1] }} chunks have embeddings ready for search
+                                {% else %}
+                                    No embeddings found. Run embedPages.py to generate embeddings.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if stats[0] and stats[0] > 0 %}
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Data Availability</h5>
+                            <p class="mb-0 text-muted">
+                                {% if stats[0] and stats[0] > 0 %}
+                                    {{ stats[0] }} total chunks available in database
+                                {% else %}
+                                    No data found. Run the pipeline scripts to populate the database.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="search-card p-4">
+            <h3 class="mb-4">
+                <i class="fas fa-info-circle me-2"></i>System Information
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Embedding Model</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Model:</strong> all-MiniLM-L6-v2</li>
+                        <li><strong>Dimensions:</strong> 384</li>
+                        <li><strong>Type:</strong> Sentence Transformers</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Database</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Type:</strong> PostgreSQL with pgvector</li>
+                        <li><strong>Index:</strong> HNSW (Hierarchical Navigable Small World)</li>
+                        <li><strong>Distance:</strong> Cosine Similarity</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="search-card p-4 mt-4">
+            <h3 class="mb-4">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-search me-2"></i>Start Searching
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="refreshStats()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Stats
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-info w-100 mb-2" onclick="showAPIInfo()">
+                        <i class="fas fa-code me-2"></i>API Info
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Information Modal -->
+<div class="modal fade" id="apiModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-code me-2"></i>API Information
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Search API Endpoint:</h6>
+                <code>POST /api/search</code>
+                
+                <h6 class="mt-3">Request Body:</h6>
+                <pre class="bg-light p-3"><code>{
+  "search_text": "your search query",
+  "threshold": 0.5,
+  "limit": 20
+}</code></pre>
+                
+                <h6 class="mt-3">Response:</h6>
+                <pre class="bg-light p-3"><code>{
+  "results": [...],
+  "query_time": 0.123,
+  "total_time": 0.456,
+  "result_count": 15,
+  "search_text": "your search query",
+  "threshold": 0.5
+}</code></pre>
+                
+                <h6 class="mt-3">Example cURL:</h6>
+                <pre class="bg-light p-3"><code>curl -X POST http://localhost:5000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"search_text": "machine learning", "threshold": 0.5, "limit": 10}'</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function refreshStats() {
+        location.reload();
+    }
+
+    function showAPIInfo() {
+        const modal = new bootstrap.Modal(document.getElementById('apiModal'));
+        modal.show();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - WET Pipeline{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Search Header -->
+        <div class="search-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">
+                    <i class="fas fa-search me-2"></i>Search Results
+                </h2>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i>New Search
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="mb-1"><strong>Query:</strong> "{{ search_text }}"</p>
+                    <p class="mb-0 text-muted">
+                        Found {{ result_count }} results in {{ "%.3f"|format(total_time) }} seconds
+                        (Query: {{ "%.3f"|format(query_time) }}s)
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-primary me-2">Threshold: {{ threshold }}</span>
+                    <span class="badge bg-secondary">Limit: {{ limit }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        {% if results %}
+        <div class="row">
+            {% for result in results %}
+            <div class="col-12 mb-4">
+                <div class="result-card card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-alt me-2"></i>Chunk #{{ result.chunk_index }}
+                            </h5>
+                            <span class="similarity-badge">
+                                Similarity: {{ "%.3f"|format(1 - result.cosine_distance) }}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <a href="{{ result.url }}" target="_blank" class="url-link">
+                                <i class="fas fa-external-link-alt me-1"></i>{{ result.url }}
+                            </a>
+                            <span class="badge bg-light text-dark ms-2">
+                                {{ result.language | upper }} ({{ "%.1f"|format(result.language_confidence * 100) }}%)
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text">{{ result.original_text[:500] }}{% if result.original_text|length > 500 %}...{% endif %}</p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ result.created_at.strftime('%Y-%m-%d %H:%M') if result.created_at else 'Unknown' }}
+                            </small>
+                            <div>
+                                <span class="badge bg-info me-1">ID: {{ result.id }}</span>
+                                <span class="badge bg-secondary">Page: {{ result.page_id }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination/More Results -->
+        {% if result_count == limit %}
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                Showing top {{ limit }} results. 
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-search me-1"></i>Refine Search
+                </a>
+            </p>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- No Results -->
+        <div class="search-card p-5 text-center">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No results found</h4>
+            <p class="text-muted mb-4">
+                Try adjusting your search query or similarity threshold.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i>New Search
+                </a>
+                <button class="btn btn-outline-secondary" onclick="history.back()">
+                    <i class="fas fa-undo me-1"></i>Go Back
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search Again Form -->
+<div class="row mt-5">
+    <div class="col-lg-6 mx-auto">
+        <div class="search-card p-4">
+            <h5 class="mb-3">
+                <i class="fas fa-search me-2"></i>Search Again
+            </h5>
+            <form method="POST" action="{{ url_for('search') }}">
+                <div class="input-group mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           name="search_text" 
+                           placeholder="Enter new search query..."
+                           value="{{ search_text }}"
+                           required>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                </div>
+                <input type="hidden" name="threshold" value="{{ threshold }}">
+                <input type="hidden" name="limit" value="{{ limit }}">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-focus search input
+    document.querySelector('input[name="search_text"]').focus();
+</script>
+{% endblock %}

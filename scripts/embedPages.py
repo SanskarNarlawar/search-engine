@@ -215,11 +215,18 @@ def process_page(nlp, model, page_id: int, url: str, content: str) -> None:
 def main() -> None:
     setup_logging()
     logging.info("Starting local embedding process...")
+    
+    # Initialize components (not included in processing time)
     init_db()
     model = init_local_model()
     nlp = ensure_spacy_sentencizer()
 
-    pages = load_pending_pages(limit=5)  # Back to original batch size
+    
+    
+    pages = load_pending_pages(limit=1000)  # Back to original batch size
+
+    # Start timing the actual processing (including loading pages from DB)
+    processing_start_time = time.time()
     if not pages:
         logging.info("No pending pages found")
         return
@@ -233,7 +240,19 @@ def main() -> None:
             logging.error(f"Failed to process page {pid}: {e}", exc_info=True)
             mark_error(pid, str(e))
     
-    logging.info(f"Embedding process completed. Processed {len(pages)} pages.")
+    # Calculate timing statistics
+    processing_time = time.time() - processing_start_time
+    pages_processed = len(pages)
+    time_per_page = processing_time / pages_processed if pages_processed > 0 else 0
+    
+    # Display timing summary
+    print(f"\n=== EMBEDDING PROCESSING SUMMARY ===")
+    print(f"Pages processed: {pages_processed}")
+    print(f"Total processing time: {processing_time:.3f} seconds")
+    print(f"Time per page: {time_per_page:.3f} seconds")
+    print(f"Pages per minute: {60 / time_per_page:.1f}" if time_per_page > 0 else "Pages per minute: N/A")
+    
+    logging.info(f"Embedding process completed. Processed {pages_processed} pages in {processing_time:.3f} seconds ({time_per_page:.3f} seconds per page).")
 
 
 if __name__ == "__main__":
