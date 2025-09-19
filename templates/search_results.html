@@ -40,7 +40,8 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="card-title mb-0">
-                                <i class="fas fa-file-alt me-2"></i>Chunk #{{ result.chunk_index }}
+                                <i class="fas fa-file-alt me-2"></i>Page Content
+                                <small class="text-muted">(Chunk #{{ result.chunk_index }})</small>
                             </h5>
                             <span class="similarity-badge">
                                 Similarity: {{ "%.3f"|format(1 - result.cosine_distance) }}
@@ -57,7 +58,10 @@
                         </div>
                         
                         <div class="mb-3">
-                            <p class="card-text">{{ result.original_text[:500] }}{% if result.original_text|length > 500 %}...{% endif %}</p>
+                            <p class="card-text">
+                                <strong>Content Preview:</strong><br>
+                                {{ result.original_text[:500] }}{% if result.original_text|length > 500 %}...{% endif %}
+                            </p>
                         </div>
                         
                         <div class="d-flex justify-content-between align-items-center">

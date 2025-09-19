@@ -176,21 +176,27 @@ def search():
             search_text, threshold, limit
         )
         
-        # Format results for display
+        # Format results for display and deduplicate by page_id
         formatted_results = []
+        seen_pages = set()
+        
         for row in results:
-            formatted_results.append({
-                'id': row[0],
-                'page_id': row[1],
-                'chunk_index': row[2],
-                'original_text': row[3],
-                'enriched_text': row[4],
-                'url': row[5],
-                'language': row[6],
-                'language_confidence': row[7],
-                'cosine_distance': row[8],
-                'created_at': row[9]
-            })
+            page_id = row[1]
+            # Only include the first (best) chunk from each page
+            if page_id not in seen_pages:
+                formatted_results.append({
+                    'id': row[0],
+                    'page_id': page_id,
+                    'chunk_index': row[2],
+                    'original_text': row[3],
+                    'enriched_text': row[4],
+                    'url': row[5],
+                    'language': row[6],
+                    'language_confidence': row[7],
+                    'cosine_distance': row[8],
+                    'created_at': row[9]
+                })
+                seen_pages.add(page_id)
         
         # Calculate average similarity
         avg_distance = sum(r['cosine_distance'] for r in formatted_results) / len(formatted_results) if formatted_results else 0
@@ -230,20 +236,26 @@ def api_search():
             search_text, threshold, limit
         )
         
-        # Format results for JSON response
+        # Format results for JSON response and deduplicate by page_id
         formatted_results = []
+        seen_pages = set()
+        
         for row in results:
-            formatted_results.append({
-                'id': row[0],
-                'page_id': row[1],
-                'chunk_index': row[2],
-                'original_text': row[3][:500] + '...' if len(row[3]) > 500 else row[3],
-                'url': row[5],
-                'language': row[6],
-                'language_confidence': row[7],
-                'cosine_distance': round(row[8], 4),
-                'created_at': row[9].isoformat() if row[9] else None
-            })
+            page_id = row[1]
+            # Only include the first (best) chunk from each page
+            if page_id not in seen_pages:
+                formatted_results.append({
+                    'id': row[0],
+                    'page_id': page_id,
+                    'chunk_index': row[2],
+                    'original_text': row[3][:500] + '...' if len(row[3]) > 500 else row[3],
+                    'url': row[5],
+                    'language': row[6],
+                    'language_confidence': row[7],
+                    'cosine_distance': round(row[8], 4),
+                    'created_at': row[9].isoformat() if row[9] else None
+                })
+                seen_pages.add(page_id)
         
         return jsonify({
             'results': formatted_results,

@@ -104,7 +104,8 @@ def search_similar_chunks(
         limit: Maximum number of results to return
     
     Returns:
-        List of tuples containing search results
+        List of tuples containing search results (may include multiple chunks per page)
+        Note: The web app deduplicates results to show only the best chunk per page
     """
     logging.info(f"Searching for similar chunks (threshold: {threshold}, limit: {limit})")
     search_start_time = time.time()
